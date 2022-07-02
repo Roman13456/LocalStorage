@@ -52,6 +52,7 @@ saveAsEdited.addEventListener("click",function(){
         list.replaceChild(liNode,liArray[index])
         users.splice(index,1,user)
         updateStorage()
+        clearInputs()
     }
 })
 list.addEventListener("click",function(e){
