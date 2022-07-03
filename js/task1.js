@@ -13,89 +13,136 @@ const inputName = form.elements["name"]
 const inputAge = form.elements["age"]
 const inputPosition = form.elements["position"]
 const list = document.querySelector(".list")
-const saveAsEdited = document.querySelector(".btn-save-edited")
+const changeToSaveNewUser = document.querySelector(".btn-change-save-new")
+const submit = document.querySelector(".btn-save")
 const preview = document.querySelector(".preview")
-let users =[]
+let users = []
 getFromStorage()
-users.forEach(insertLi)
-form.addEventListener("submit",function(e){
-    e.preventDefault()
-    const user = {
-        id:+(new Date().getTime()),
-        name:inputName.value,
-        age:inputAge.value,
-        position:inputPosition.value,
+createUsersOnList()
+function setError(element,error){
+    const inputControls = element.parentElement
+    const errorMsg = inputControls.querySelector(".error")
+    errorMsg.innerHTML=error
+    inputControls.classList.add("error")
+    inputControls.classList.remove("success")
+    
+}
+function setSuccess(element){
+    console.log(element)
+    const inputControls = element.parentElement
+    console.log(inputControls)
+    const errorMsg = inputControls.querySelector(".error")
+    inputControls.classList.add("success")
+    inputControls.classList.remove("error")
+    errorMsg.innerHTML=""
+}
+function validate(){
+    let bool = true
+    const inputNameValue = inputName.value.trim()
+    const inputAgeValue = inputAge.value.trim()
+    const inputPositionValue = inputPosition.value.trim()
+    if(inputNameValue===""){
+        setError(inputName,"Name field is empty")
+        bool = false
+    }else{
+        setSuccess(inputName)
     }
-    users.push(user)
-    insertLi(user)
-    updateStorage()
+    if(inputAgeValue===""){
+        setError(inputAge,"Age field is empty")
+        bool = false
+    }else{
+        setSuccess(inputAge)
+    }
+    if(inputPositionValue===""){
+        setError(inputPosition,"Position field is empty")
+        bool = false
+    }else{
+        setSuccess(inputPosition)
+    }
+    return bool
+}
+changeToSaveNewUser.addEventListener("click",()=>{
+    nullFormId()
     clearInputs()
 })
-function findInArrayById(id){
-    return users.findIndex((element)=>element.id===id)
-}
-saveAsEdited.addEventListener("click",function(){
-    if(inputName.getAttribute("data-id")!==null){//
-        let idOfToEdit = +(inputName.getAttribute("data-id"))//напевно завжди краще приводити до числа прямо тут, потім легко забути
-        inputName.removeAttribute("data-id")
-        let index = findInArrayById(idOfToEdit)
-        let liArray  = document.querySelectorAll(".list li")
-        let liNode = document.createElement("li")
-        let user = {
-            id:idOfToEdit,
-            name:inputName.value,
-            age:inputAge.value,
-            position:inputPosition.value,
+form.addEventListener("submit",function(e){
+    e.preventDefault()
+    validate()
+    if(validate()){
+        const formId = +(form.getAttribute("data-id"))
+        if(formId===0){
+            const user = {
+                id:new Date().getTime(),
+                name:inputName.value,
+                age:inputAge.value,
+                position:inputPosition.value,
+            }
+            users.push(user)
+            createLi(user)
+            updateStorage()
+            clearInputs()
+        }else{
+            const liArray = document.querySelectorAll(".list li")
+            const editedLi = document.createElement("li")
+            const user = {
+                id:formId,
+                name:inputName.value,
+                age:inputAge.value,
+                position:inputPosition.value,
+            }
+            editedLi.setAttribute("data-id",`${user.id}`)
+            editedLi.insertAdjacentHTML("afterbegin",`${user.name}<button class="edit-btn">Edit</button><button class="remove-btn">Remove</button><button class="view-btn">View</button>`)
+            const index = users.findIndex((user)=>formId===user.id)
+            users[index] = user
+            updateStorage()
+            list.replaceChild(editedLi,liArray[index])
+            nullFormId()
+            clearInputs()
         }
-        liNode.setAttribute("data-id",`${user.id}`)
-        liNode.insertAdjacentHTML("afterbegin",`${user.name} <button class="edit-btn">edit</button><button class="remove-btn">remove</button><button class="view-btn">view</button>`)
-        list.replaceChild(liNode,liArray[index])
-        users.splice(index,1,user)
-        updateStorage()
-        clearInputs()
     }
 })
 list.addEventListener("click",function(e){
     const target = e.target
-    if(target.classList.contains("remove-btn")){
-        const li = target.closest("li")//have to delete li, than to delete from localStorage
-        const id = +(li.getAttribute("data-id"))
-        const index = findInArrayById(id)
-        li.remove()
-        users.splice(index,1)
-        updateStorage()
-    }else if(target.classList.contains("edit-btn")){
-        const li = target.closest("li")//have to delete li, than to delete from localStorage
-        const id = +(li.getAttribute("data-id"))
-        const index = findInArrayById(id)
-        inputName.value = users[index].name
-        inputName.setAttribute("data-id",users[index].id)
-        inputAge.value = users[index].age
-        inputPosition.value = users[index].position
-    }else if(target.classList.contains("view-btn")){
-        const li = target.closest("li")//have to delete li, than to delete from localStorage
-        const id = +(li.getAttribute("data-id"))
-        const index = users.findIndex((element)=>element.id===id)
-        previewData(index)
+    if(target.classList.contains("remove-btn")|| target.classList.contains("view-btn")||target.classList.contains("edit-btn")){
+        const parentLi = target.closest("li")
+        const IdOfParentLi = +(parentLi.getAttribute("data-id"))
+        const index = users.findIndex((user)=>IdOfParentLi===user.id)
+        if(target.classList.contains("remove-btn")){
+            //get або схоже повертають строку, треба перетворювати в число
+            parentLi.remove()/////
+            users.splice(index,1)
+            updateStorage()
+        }else if(target.classList.contains("view-btn")){
+            preview.innerHTML=`${JSON.stringify(users[index])}`
+        }else if(target.classList.contains("edit-btn")){
+            submit.innerHTML="Save edited changes"
+            inputName.value=users[index].name
+            form.setAttribute("data-id",`${users[index].id}`)
+            inputAge.value=users[index].age
+            inputPosition.value=users[index].position
+        }
     }
 })
-function insertLi(user){
-    list.insertAdjacentHTML("beforeend",`<li data-id = "${user.id}">${user.name} <button class="edit-btn">edit</button><button class="remove-btn">remove</button><button class="view-btn">view</button></li>`)
+function nullFormId(){
+    form.setAttribute("data-id","0")
+    submit.innerHTML = "Save new user"
+}
+function createUsersOnList(){
+    users.forEach(createLi)
+}
+function createLi(user){
+    list.insertAdjacentHTML("beforeend",`<li data-id=${user.id}>${user.name}<div><button class="edit-btn">Edit</button><button class="remove-btn">Remove</button><button class="view-btn">View</button></div></li>`)
 }
 function updateStorage(){
     localStorage.setItem("users",JSON.stringify(users))
 }
 function getFromStorage(){
-    if(JSON.parse(localStorage.getItem("users"))!==null){
-        users = JSON.parse(localStorage.getItem("users"))
+    if(localStorage.getItem("users")!==null){
+        users=JSON.parse(localStorage.getItem("users"))
     }
 }
 function clearInputs(){
-    inputName.value =""
-    inputAge.value =""
-    inputPosition.value =""
-}
-function previewData(index){
-    preview.innerHTML=""
-    preview.insertAdjacentHTML("afterbegin",`${JSON.stringify(users[index])}`)
+    inputName.value = ""
+    inputAge.value = ""
+    inputPosition.value = ""
 }
