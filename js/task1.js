@@ -28,9 +28,7 @@ function setError(element,error){
     
 }
 function setSuccess(element){
-    console.log(element)
     const inputControls = element.parentElement
-    console.log(inputControls)
     const errorMsg = inputControls.querySelector(".error")
     inputControls.classList.add("success")
     inputControls.classList.remove("error")
@@ -44,17 +42,27 @@ function validate(){
     if(inputNameValue===""){
         setError(inputName,"Name field is empty")
         bool = false
+    }else if(inputNameValue.length>8){
+        setError(inputName,"Name length is more than 8 characters")
+        bool = false
     }else{
         setSuccess(inputName)
     }
     if(inputAgeValue===""){
         setError(inputAge,"Age field is empty")
         bool = false
+    }else if(!Number.isInteger(+inputAgeValue) || inputAgeValue.length>3){
+        console.log(inputAgeValue)
+        setError(inputAge,"Your age is invalid")
+        bool = false
     }else{
         setSuccess(inputAge)
     }
     if(inputPositionValue===""){
         setError(inputPosition,"Position field is empty")
+        bool = false
+    }else if(inputPositionValue.length>20){
+        setError(inputPosition,"Your position contains more than 20 characters, make it shorter")
         bool = false
     }else{
         setSuccess(inputPosition)
@@ -81,6 +89,7 @@ form.addEventListener("submit",function(e){
             createLi(user)
             updateStorage()
             clearInputs()
+            isAvailable()
         }else{
             const liArray = document.querySelectorAll(".list li")
             const editedLi = document.createElement("li")
@@ -91,7 +100,7 @@ form.addEventListener("submit",function(e){
                 position:inputPosition.value,
             }
             editedLi.setAttribute("data-id",`${user.id}`)
-            editedLi.insertAdjacentHTML("afterbegin",`${user.name}<button class="edit-btn">Edit</button><button class="remove-btn">Remove</button><button class="view-btn">View</button>`)
+            editedLi.insertAdjacentHTML("afterbegin",`${user.name}<div><button class="edit-btn">Edit</button><button class="remove-btn">Remove</button><button class="view-btn">View</button></div>`)
             const index = users.findIndex((user)=>formId===user.id)
             users[index] = user
             updateStorage()
@@ -112,6 +121,11 @@ list.addEventListener("click",function(e){
             parentLi.remove()/////
             users.splice(index,1)
             updateStorage()
+            if(+form.getAttribute("data-id")===IdOfParentLi){
+                clearInputs()
+                nullFormId()
+            }
+            isAvailable()
         }else if(target.classList.contains("view-btn")){
             preview.innerHTML=`${JSON.stringify(users[index])}`
         }else if(target.classList.contains("edit-btn")){
@@ -123,6 +137,13 @@ list.addEventListener("click",function(e){
         }
     }
 })
+function isAvailable(){
+    if(list.innerHTML===""){
+        list.classList.remove("visible")
+    }else{
+        list.classList.add("visible")
+    }
+}
 function nullFormId(){
     form.setAttribute("data-id","0")
     submit.innerHTML = "Save new user"
@@ -132,6 +153,7 @@ function createUsersOnList(){
 }
 function createLi(user){
     list.insertAdjacentHTML("beforeend",`<li data-id=${user.id}>${user.name}<div><button class="edit-btn">Edit</button><button class="remove-btn">Remove</button><button class="view-btn">View</button></div></li>`)
+    isAvailable()
 }
 function updateStorage(){
     localStorage.setItem("users",JSON.stringify(users))

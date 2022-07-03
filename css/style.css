@@ -4,9 +4,11 @@
 body{
     background-color:aquamarine;
 }
-ul.list{
+ul.list.visible{
     border: 3px solid violet;
     border-radius: 5px;
+    padding-top: 10px;
+    padding-bottom: 10px;
 }
 form input{
     width: 100%;
